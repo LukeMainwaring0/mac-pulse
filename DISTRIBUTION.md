@@ -5,16 +5,18 @@ notarized disk image and update themselves through Sparkle.
 
 ## One-time setup
 
-1. Install a **Developer ID Application** certificate for the paid Apple
-   Developer team in the login Keychain.
-2. Create an app-specific Apple ID password, then store notarization credentials:
+1. Releases are signed with **Developer ID Application: Lightfield, Inc.
+   (TYVB4357K2)**, which must be in the login Keychain.
+2. Notarization uses an App Store Connect API key stored as the Keychain
+   profile `mac-pulse-lightfield`:
 
    ```sh
-   xcrun notarytool store-credentials mac-pulse-notary \
-     --apple-id "APPLE_ID" \
-     --team-id "QCGU85GC22" \
-     --password "APP_SPECIFIC_PASSWORD"
+   xcrun notarytool store-credentials mac-pulse-lightfield \
+     --key AuthKey_KEYID.p8 --key-id KEYID --issuer ISSUER_ID
    ```
+
+   If Apple returns HTTP 403 about a missing agreement, the Account Holder must
+   accept the latest agreement at developer.apple.com first.
 
 3. Sign in to GitHub CLI with `gh auth login --hostname github.com`.
 4. Releases are attached to the public source repository
@@ -30,7 +32,7 @@ Choose a monotonically increasing build number and run:
 
 ```sh
 BUILD_NUMBER=10 \
-DEVELOPER_ID_APPLICATION="Developer ID Application: … (QCGU85GC22)" \
+DEVELOPER_ID_APPLICATION="Developer ID Application: Lightfield, Inc. (TYVB4357K2)" \
 ./script/release.sh 1.2.0 --publish
 ```
 
