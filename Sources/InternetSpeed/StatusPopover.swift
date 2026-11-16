@@ -1153,9 +1153,13 @@ struct LiveGraph: View {
         }
 
         graphics.drawLayer { layer in
-            layer.opacity = 0.24
-            layer.fill(area, with: shading)
-            // Fade the fill toward the bottom edge.
+            // Color strongest just under the line, fading to clear at the
+            // bottom. The fade runs in the outer layer so the fill's own
+            // opacity doesn't weaken it.
+            layer.drawLayer { fill in
+                fill.opacity = 0.32
+                fill.fill(area, with: shading)
+            }
             layer.blendMode = .destinationOut
             layer.fill(
                 Path(CGRect(origin: .zero, size: size)),
