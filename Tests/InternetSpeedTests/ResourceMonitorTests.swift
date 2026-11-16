@@ -46,7 +46,8 @@ final class ResourceMonitorTests: XCTestCase {
         load5: Double = 1,
         diskReads: UInt64? = 500,
         diskWrites: UInt64? = 1_000,
-        processes: [ProcessResourceMetric] = []
+        processes: [ProcessResourceMetric] = [],
+        systemPressure: Int? = nil
     ) -> ResourceRawSnapshot {
         let tick = cpu ?? UInt64(minute * 100)
         return ResourceRawSnapshot(
@@ -54,7 +55,7 @@ final class ResourceMonitorTests: XCTestCase {
             uptimeSeconds: uptime ?? TimeInterval(10_000 + minute * 60),
             pageSize: 4_096,
             memory: memory ?? self.memory(),
-            memoryStatusLevel: nil,
+            memoryStatusLevel: systemPressure,
             swapUsedBytes: swapUsed,
             swapTotalBytes: 4 * gb,
             swapIns: swapIns,
@@ -126,7 +127,26 @@ final class ResourceMonitorTests: XCTestCase {
 
         snapshot = analyzer.ingest(raw(minute: 30, start: start, memory: elevated))
         XCTAssertEqual(snapshot.alerts.first(where: { $0.id == "pressure-elevated" })?.cause,
-                       "Estimated memory pressure has stayed elevated for 30 min")
+                       "Memory pressure has stayed elevated for 30 min")
+    }
+
+    /// Lots of compressed memory looked "elevated" to the estimate while
+    /// macOS itself reported normal pressure; macOS's reading wins.
+    func testSystemPressureLevelOverridesTheEstimate() {
+        let analyzer = ResourceAnalyzer(store: MemoryStore())
+        let start = Date(timeIntervalSince1970: 2_000_000_000)
+        let heavyCompression = memory(compressed: 23 * gb, active: 20 * gb)
+
+        let normal = analyzer.ingest(raw(minute: 0, start: start, memory: heavyCompression, systemPressure: 1))
+        XCTAssertEqual(normal.sample.pressure, .normal)
+        XCTAssertEqual(normal.sample.pressureSource, "System signal")
+
+        let warning = analyzer.ingest(raw(minute: 1, start: start, memory: memory(), systemPressure: 2))
+        XCTAssertEqual(warning.sample.pressure, .elevated)
+
+        let estimated = analyzer.ingest(raw(minute: 2, start: start, memory: heavyCompression))
+        XCTAssertEqual(estimated.sample.pressure, .elevated)
+        XCTAssertEqual(estimated.sample.pressureSource, "Estimated")
     }
 
     func testCriticalPressureAlertsOnFirstSample() {

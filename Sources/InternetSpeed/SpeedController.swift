@@ -878,25 +878,13 @@ final class SpeedController: NSObject {
         } ? .attention : .normal
     }
 
+    /// The CPU dot and meter reflect CPU use only; memory pressure and heat
+    /// have their own dots.
     private func performanceLevel(for resource: ResourceSnapshot) -> Double {
-        // Prefer the live per-core reading so the label matches the CPU bars;
+        // Prefer the live per-core reading so the dot matches the CPU bars;
         // the resource sample is only taken once a minute.
-        let cpuLevel = min(1, max(0, cpuActivity?.total ?? resource.sample.cpuPercent / 100))
-        let pressureLevel: Double
-        switch resource.sample.pressure {
-        case .normal: pressureLevel = 0.22
-        case .elevated: pressureLevel = 0.62
-        case .critical: pressureLevel = 0.95
-        case .unavailable: pressureLevel = 0.18
-        }
-        let thermalLevel: Double
-        switch resource.sample.thermalState {
-        case .nominal: thermalLevel = 0
-        case .fair: thermalLevel = 0.35
-        case .serious: thermalLevel = 0.7
-        case .critical: thermalLevel = 1
-        }
-        return min(1, max(0.05, max(cpuLevel, max(pressureLevel, thermalLevel))))
+        let cpuLevel = cpuActivity?.total ?? resource.sample.cpuPercent / 100
+        return min(1, max(0.05, cpuLevel))
     }
 
     private func relativeAge(from date: Date) -> String {

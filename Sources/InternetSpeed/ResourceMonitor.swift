@@ -403,13 +403,15 @@ final class ResourceAnalyzer {
             default: return nil
             }
         }()
-        let effectivePressure = [estimatedPressure, signaledPressure ?? .unavailable]
-            .max(by: { pressureRank($0) < pressureRank($1) }) ?? estimatedPressure
+        // macOS's own pressure level is what Activity Monitor shows. The
+        // estimate from VM counters is only a fallback when it's unavailable;
+        // large compressed memory alone isn't pressure on a 128 GB Mac.
+        let effectivePressure = signaledPressure ?? estimatedPressure
         let sample = ResourceHistorySample(
             capturedAt: raw.capturedAt,
             uptimeSeconds: raw.uptimeSeconds,
             pressure: effectivePressure,
-            pressureSource: signaledPressure.map { pressureRank($0) >= pressureRank(estimatedPressure) ? "System signal" : "Estimated" } ?? "Estimated",
+            pressureSource: signaledPressure == nil ? "Estimated" : "System signal",
             memory: CodableMemoryMetrics(raw.memory),
             memoryStatusLevel: raw.memoryStatusLevel,
             swapUsedBytes: raw.swapUsedBytes,
@@ -477,12 +479,12 @@ final class ResourceAnalyzer {
     private func alerts(at now: Date) -> [ResourceAlert] {
         var results: [ResourceAlert] = []
         if history.last?.pressure == .critical {
-            results.append(ResourceAlert(id: "pressure-critical", severity: .critical, cause: "Estimated memory pressure is critical now"))
+            results.append(ResourceAlert(id: "pressure-critical", severity: .critical, cause: "Memory pressure is critical now"))
         } else if sustained(
             since: now.addingTimeInterval(-30 * 60),
             { $0.pressure == .elevated || $0.pressure == .critical }
         ) {
-            results.append(ResourceAlert(id: "pressure-elevated", severity: .attention, cause: "Estimated memory pressure has stayed elevated for 30 min"))
+            results.append(ResourceAlert(id: "pressure-elevated", severity: .attention, cause: "Memory pressure has stayed elevated for 30 min"))
         }
 
         let swapWindow = window(since: now.addingTimeInterval(-15 * 60))
@@ -698,6 +700,20 @@ final class NativeResourceMetricProvider: ResourceMetricProviding {
         self.pressureObserver = pressureObserver
     }
 
+    /// The kernel's current memory pressure level (1 normal, 2 warning,
+    /// 4 critical), mapped to the 1–3 codes the analyzer uses.
+    static func systemPressureCode() -> Int? {
+        var level: Int32 = 0
+        var size = MemoryLayout<Int32>.size
+        guard sysctlbyname("kern.memorystatus_vm_pressure_level", &level, &size, nil, 0) == 0 else { return nil }
+        switch level {
+        case 1: return 1
+        case 2: return 2
+        case 4: return 3
+        default: return nil
+        }
+    }
+
     func capture(at date: Date) -> ResourceRawSnapshot? {
         guard let vm = virtualMemory(), let cpuTicks = cpuTicks() else { return nil }
         let swap = swapUsage()
@@ -707,7 +723,7 @@ final class NativeResourceMetricProvider: ResourceMetricProviding {
             uptimeSeconds: ProcessInfo.processInfo.systemUptime,
             pageSize: nativePageSize(),
             memory: vm.memory,
-            memoryStatusLevel: pressureObserver.currentCode,
+            memoryStatusLevel: Self.systemPressureCode() ?? pressureObserver.currentCode,
             swapUsedBytes: swap?.used ?? 0,
             swapTotalBytes: swap?.total ?? 0,
             swapIns: vm.swapIns,
@@ -892,15 +908,6 @@ private func hostCPUPercent(current: HostCPUTicks, previous: HostCPUTicks?) -> D
     let total = current.total - previous.total
     guard total > 0 else { return 0 }
     return Double(current.busy - previous.busy) / Double(total) * 100
-}
-
-private func pressureRank(_ level: ResourcePressureLevel) -> Int {
-    switch level {
-    case .unavailable: return 0
-    case .normal: return 1
-    case .elevated: return 2
-    case .critical: return 3
-    }
 }
 
 private extension Collection {
