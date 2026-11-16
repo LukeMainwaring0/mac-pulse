@@ -152,7 +152,7 @@ final class InternetSpeedApp {
         var payload: [String: Any] = [
             "capturedAt": sample.capturedAt.timeIntervalSince1970,
             "pressure": sample.pressure.displayName,
-            "pressureSource": "Estimated from public Mach VM counters",
+            "pressureSource": sample.pressureSource ?? "Estimated",
             "memoryUsedBytes": sample.memory.usedBytes,
             "memoryWiredBytes": sample.memory.wiredBytes,
             "memoryCompressedBytes": sample.memory.compressedBytes,
