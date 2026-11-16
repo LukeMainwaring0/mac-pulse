@@ -2,6 +2,12 @@
 
 Mac Pulse is a native macOS menu bar app that keeps an eye on your Mac and your internet connection. Four small symbols in the menu bar change color when something needs attention: download, memory, temperature, and CPU. Click them for a compact dashboard, or open the full Command Center app for detail.
 
+## Download
+
+Get the **.dmg** file from the [latest release](https://github.com/LukeMainwaring0/mac-pulse/releases/latest), open it, and drag Mac Pulse into Applications. It runs on macOS 13 or later, on Apple silicon and Intel Macs.
+
+The app isn't notarized by Apple yet, so the first time you open it macOS blocks it. Click **Done**, then go to **System Settings › Privacy & Security** and click **Open Anyway** next to Mac Pulse. You only need to do this once, and the app checks for updates by itself after that.
+
 ## What it does
 
 - **Menu bar at a glance.** Four outline symbols are tinted green, yellow, orange, or red to match the status dots in the menu. Battery information appears after a thin divider only when it matters (on battery, or at 80% or below).
