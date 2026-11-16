@@ -191,6 +191,7 @@ final class SpeedController: NSObject {
             startPopoverLiveUpdates()
         } else {
             stopPopoverLiveUpdates()
+            appUpdater.installPendingUpdateIfIdle()
         }
     }
 
@@ -229,6 +230,10 @@ final class SpeedController: NSObject {
         statusNotifications.openApp = { [weak self] in self?.openApp() }
         statusNotifications.onRedChange = { [weak self] in self?.updateStatusTitle() }
         statusNotifications.start()
+        appUpdater.canInstallNow = { [weak self] in
+            guard let self else { return true }
+            return UpdateInstallPolicy.canInstallNow(menuIsOpen: self.panel.isShown, windowIsOpen: self.appWindow.isOpen)
+        }
         appUpdater.start()
         settings.enableLaunchAtLoginIfInstalled()
         resourceMonitor.setImmediatePressureHandler { [weak self] alert in

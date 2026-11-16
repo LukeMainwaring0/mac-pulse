@@ -62,4 +62,10 @@ final class AppUpdaterTests: XCTestCase {
             "SUPublicEDKey": Data("too short".utf8).base64EncodedString()
         ]))
     }
+
+    func testUpdatesWaitUntilMenuAndWindowAreClosed() {
+        XCTAssertTrue(UpdateInstallPolicy.canInstallNow(menuIsOpen: false, windowIsOpen: false))
+        XCTAssertFalse(UpdateInstallPolicy.canInstallNow(menuIsOpen: true, windowIsOpen: false))
+        XCTAssertFalse(UpdateInstallPolicy.canInstallNow(menuIsOpen: false, windowIsOpen: true))
+    }
 }
