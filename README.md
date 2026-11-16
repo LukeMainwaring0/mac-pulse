@@ -6,7 +6,7 @@ Mac Pulse is a native macOS menu bar app that keeps an eye on your Mac and your 
 
 Get the **.dmg** file from the [latest release](https://github.com/LukeMainwaring0/mac-pulse/releases/latest), open it, and drag Mac Pulse into Applications. It runs on macOS 13 or later, on Apple silicon and Intel Macs.
 
-The app isn't notarized by Apple yet, so the first time you open it macOS blocks it. Click **Done**, then go to **System Settings › Privacy & Security** and click **Open Anyway** next to Mac Pulse. You only need to do this once, and the app checks for updates by itself after that.
+The app isn't notarized by Apple yet, so the first time you open it macOS blocks it. Click **Done**, then go to **System Settings › Privacy & Security** and click **Open Anyway** next to Mac Pulse. You only need to do this once.
 
 ## What it does
 
