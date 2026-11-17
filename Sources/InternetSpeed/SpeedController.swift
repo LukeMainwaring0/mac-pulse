@@ -500,7 +500,7 @@ final class SpeedController: NSObject {
         let battery = displayedBattery
         let batteryIsRed = statusNotifications.redIDs.contains("power")
         let fingerprint = ([menuBarIsLight ? "light-bar" : "dark-bar"] + menuBarStatuses.map { "\($0.section.rawValue)=\($0.status.map { String($0.level.rawValue) } ?? "-")" }
-            + [battery.map { "\(batteryBucket(for: $0.percentage))|\($0.flow.rawValue)|\(SystemStatsFormatting.compactDuration($0.timeRemainingMinutes))" } ?? "",
+            + [battery.map { "\(batteryBucket(for: $0.percentage))|\($0.flow.rawValue)|\(SystemStatsFormatting.menuBarBattery(minutes: $0.timeRemainingMinutes, percentage: $0.percentage))" } ?? "",
                batteryIsRed ? "battery-red" : ""])
             .joined(separator: "\u{1F}")
         guard StatusItemRefreshPolicy.shouldApply(
@@ -568,7 +568,7 @@ final class SpeedController: NSObject {
             }
             if battery.flow != .pluggedIn {
                 title.append(NSAttributedString(
-                    string: SystemStatsFormatting.compactDuration(battery.timeRemainingMinutes),
+                    string: SystemStatsFormatting.menuBarBattery(minutes: battery.timeRemainingMinutes, percentage: battery.percentage),
                     attributes: [.font: font, .foregroundColor: batteryIsRed ? NSColor.systemRed : NSColor.labelColor]
                 ))
             }

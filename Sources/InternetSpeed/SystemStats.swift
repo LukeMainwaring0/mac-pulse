@@ -522,6 +522,13 @@ enum SystemStatsFormatting {
         return "Confidence: \(confidence) · \(sample)"
     }
 
+    /// The menu bar shows time left once it is known, and the battery
+    /// percentage until then, never a bare "…".
+    static func menuBarBattery(minutes: Int?, percentage: Int) -> String {
+        guard let minutes, minutes > 0 else { return "\(percentage)%" }
+        return compactDuration(minutes)
+    }
+
     static func compactDuration(_ minutes: Int?) -> String {
         guard let minutes, minutes > 0 else { return "…" }
         let hours = minutes / 60

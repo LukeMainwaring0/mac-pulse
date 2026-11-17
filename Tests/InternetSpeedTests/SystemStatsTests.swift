@@ -219,4 +219,10 @@ final class SystemStatsTests: XCTestCase {
             "100% · 2 hr 26 min of battery"
         )
     }
+
+    func testMenuBarShowsBatteryPercentWhileTimeIsEstimating() {
+        XCTAssertEqual(SystemStatsFormatting.menuBarBattery(minutes: nil, percentage: 100), "100%")
+        XCTAssertEqual(SystemStatsFormatting.menuBarBattery(minutes: 0, percentage: 42), "42%")
+        XCTAssertEqual(SystemStatsFormatting.menuBarBattery(minutes: 95, percentage: 42), "1h35")
+    }
 }
