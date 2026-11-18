@@ -73,7 +73,32 @@ final class MenuBarPanelTests: XCTestCase {
             }
         }
     }
+
+    /// A password prompt opened from the menu must wait until the menu has
+    /// stopped tracking, or the menu keeps every keystroke.
+    func testWorkRequestedFromOpenMenuRunsAfterMenuCloses() {
+        withAnchor { button in
+            let panel = MenuBarPanel(rootView: Text("Menu test").frame(width: 200, height: 100))
+            var ranWhileShown: Bool?
+            let ran = expectation(description: "work ran")
+            let timer = Timer(timeInterval: 0.2, repeats: false) { _ in
+                MainActor.assumeIsolated {
+                    XCTAssertTrue(panel.isShown)
+                    panel.closeThen {
+                        ranWhileShown = panel.isShown
+                        ran.fulfill()
+                    }
+                    XCTAssertNil(ranWhileShown, "work must not run inside menu tracking")
+                }
+            }
+            RunLoop.main.add(timer, forMode: .eventTracking)
+            panel.show(below: button)
+            wait(for: [ran], timeout: 2)
+            XCTAssertEqual(ranWhileShown, false)
+        }
+    }
 }
+
 
 private final class MenuSizingModel: ObservableObject {
     @Published var expanded = false

@@ -441,7 +441,20 @@ final class SpeedController: NSObject {
         rebuildMenu()
     }
 
+    /// Clamshell asks for an administrator password. Close the menu first and
+    /// bring Mac Pulse forward, or the open menu swallows the typing.
     @objc private func toggleLidClosedOperation() {
+        panel.closeThen { [weak self] in
+            if #available(macOS 14.0, *) {
+                NSApp.activate()
+            } else {
+                NSApp.activate(ignoringOtherApps: true)
+            }
+            self?.changeLidClosedOperation()
+        }
+    }
+
+    private func changeLidClosedOperation() {
         guard let status = lidClosedModeProvider.currentStatus() else {
             lidClosedModeError = LidClosedModeError.unavailable.localizedDescription
             rebuildMenu()
@@ -450,8 +463,6 @@ final class SpeedController: NSObject {
 
         let shouldEnable = !status.isEnabled
         if !shouldEnable, status.isLidClosed {
-            // The alert would otherwise open behind the menu bar panel.
-            panel.close()
             let alert = NSAlert()
             alert.alertStyle = .warning
             alert.messageText = "Let Your Mac Sleep with the Lid Closed?"

@@ -11,6 +11,7 @@ final class MenuBarPanel: NSObject, NSMenuDelegate {
     var onShow: () -> Void = {}
     var onClose: () -> Void = {}
     private(set) var isShown = false
+    private var afterClose: [() -> Void] = []
     private var hostingView: NSHostingView<AnyView>
     private let content: AnyView
 
@@ -42,6 +43,18 @@ final class MenuBarPanel: NSObject, NSMenuDelegate {
         menu.cancelTracking()
     }
 
+    /// Closes the menu, then runs the work once AppKit has fully left menu
+    /// tracking. A menu that is still tracking takes every keystroke, so
+    /// anything that needs typing (like a password prompt) must wait.
+    func closeThen(_ work: @escaping () -> Void) {
+        guard isShown else {
+            DispatchQueue.main.async(execute: work)
+            return
+        }
+        afterClose.append(work)
+        close()
+    }
+
     func menuNeedsUpdate(_ menu: NSMenu) {
         onPrepare()
         // Start from the prepared snapshot, not a previously laid-out placeholder.
@@ -59,6 +72,10 @@ final class MenuBarPanel: NSObject, NSMenuDelegate {
     func menuDidClose(_ menu: NSMenu) {
         isShown = false
         onClose()
+        let pending = afterClose
+        afterClose = []
+        // menuDidClose arrives inside the tracking loop; run after it returns.
+        for work in pending { DispatchQueue.main.async(execute: work) }
     }
 
     private func fitToContent() {
